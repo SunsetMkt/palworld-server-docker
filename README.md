@@ -285,7 +285,7 @@ It is highly recommended you set the following environment values before startin
 | DISABLE_GENERATE_ENGINE                    | Whether to automatically generate the Engine.ini                                                                                                                                                    | true                                                                                               | true/false                                                                                                        | 0.30.0           |
 | ENABLE_PLAYER_LOGGING                      | Enables Logging and announcing when players join and leave                                                                                                                                          | true                                                                                               | true/false                                                                                                        | 0.31.0           |
 | PLAYER_LOGGING_POLL_PERIOD                 | Polling period (in seconds) to check for players who have joined or left                                                                                                                            | 5                                                                                                  | !0                                                                                                                | 0.31.0           |
-| ARM_COMPATIBILITY_MODE                     | Switches the compatibility layer from Box86 to QEMU when executing steamcmd for server updates. This setting is only applicable for ARM64 hosts.                                                    | false                                                                                              | true/false                                                                                                        | 0.30.0           |
+| USE_DEPOT_DOWNLOADER                     | Uses DepotDownloader to download game server files instead of steamcmd. This will help hosts incompatible with steamcmd (e.g. M-series Mac)                                                    | false                                                                                              | true/false                                                                                                        | 0.39.0           |
 
 *highly recommended to set
 
@@ -293,13 +293,37 @@ It is highly recommended you set the following environment values before startin
 
 *** Required for docker stop to save and gracefully close the server
 
+### ARM64-exclusive environment variables
+
+ARM64 hosts can use the following variables to tweak their server setup. This includes
+known relevant Box64 configurations one can modify for better server stability/performance.
+
+For the Box64 configurations, please see the their official documentation for more info.
+
+> [!TIP]
+> Set `ARM64_DEVICE` to the most appropriate setting for your device. `generic` is expected
+> to work on all devices but better stability can be found with specifying your device.
+> For more specific device compatibility, create an issue on the
+> [base image repo](https://github.com/sonroyaalmerol/steamcmd-arm64).
+
+| Variable                                   | Info                                                                                                                                                                                                | Default Values                                                                                     | Allowed Values                                                                                                                                  | Added in Version |
+|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
+| BOX64_DYNAREC_STRONGMEM                     | [[Box64 config](https://github.com/ptitSeb/box64/blob/main/docs/USAGE.md#box64_dynarec_strongmem-)] Enable/Disable simulation of Strong Memory model                                                    | 1                                                                                              | 0, 1, 2, 3                                                                                                        | 0.23.0           |
+| BOX64_DYNAREC_BIGBLOCK                     | [[Box64 config](https://github.com/ptitSeb/box64/blob/main/docs/USAGE.md#box64_dynarec_bigblock-)] Enables/Disables Box64's Dynarec building BigBlock.                                                    | 1                                                                                              | 0, 1, 2, 3                                                                                                        | 0.23.0           |
+| BOX64_DYNAREC_SAFEFLAGS                     | [[Box64 config](https://github.com/ptitSeb/box64/blob/main/docs/USAGE.md#box64_dynarec_safeflags-)] Handling of flags on CALL/RET opcodes                                                    | 1                                                                                              | 0, 1, 2                                                                                                        | 0.23.0           |
+| BOX64_DYNAREC_FASTROUND                     | [[Box64 config](https://github.com/ptitSeb/box64/blob/main/docs/USAGE.md#box64_dynarec_fastround-)] Enable/Disable generation of precise x86 rounding                                                    | 1                                                                                              | 0, 1                                                                                                        | 0.23.0           |
+| BOX64_DYNAREC_FASTNAN                     | [[Box64 config](https://github.com/ptitSeb/box64/blob/main/docs/USAGE.md#box64_dynarec_fastnan-)] Enable/Disable generation of -NAN                                                    | 1                                                                                              | 0, 1                                                                                                        | 0.23.0           |
+| BOX64_DYNAREC_X87DOUBLE                     | [[Box64 config](https://github.com/ptitSeb/box64/blob/main/docs/USAGE.md#box64_dynarec_x87double-)] Force the use of Double for x87 emulation                                                    | 0                                                                                              | 0, 1                                                                                                        | 0.23.0           |
+| ARM64_DEVICE                     | Specify Box64 build to be used based on host device. This setting is only applicable for ARM64 hosts.                                                    | generic                                                                                              | generic, m1, rpi5, adlink                                                                                                        | 0.39.0           |
+
 ### Game Ports
 
-| Port  | Info             |
-|-------|------------------|
-| 8211  | Game Port (UDP)  |
-| 27015 | Query Port (UDP) |
-| 25575 | RCON Port (TCP)  |
+| Port  | Info                |
+|-------|---------------------|
+| 8211  | Game Port (UDP)     |
+| 8212  | REST API Port (TCP) |
+| 27015 | Query Port (UDP)    |
+| 25575 | RCON Port (TCP)     |
 
 ## Using RCON
 
@@ -597,7 +621,7 @@ For example:
 | BASE_CAMP_MAX_NUM_IN_GUILD                | Max bases of Guild                                                                                                                                               | 4                                                                                            | Integer                                |
 | PAL_EGG_DEFAULT_HATCHING_TIME             | Time(h) to incubate massive egg                                                                                                                                  | 72.000000                                                                                    | Float                                  |
 | WORK_SPEED_RATE                           | Work speed muliplier                                                                                                                                             | 1.000000                                                                                     | Float                                  |
-| AUTO_SAVE_SPAN                           | Time between autosaves (minutes)                                                                                                                                             | 30.000000                                                                                     | Float                                  |
+| AUTO_SAVE_SPAN                           | Time between autosaves (seconds)                                                                                                                                             | 30.000000                                                                                     | Float                                  |
 | IS_MULTIPLAY                              | Enable multiplayer                                                                                                                                               | False                                                                                        | Boolean                                |
 | IS_PVP                                    | Enable PVP                                                                                                                                                       | False                                                                                        | Boolean                                |
 | CAN_PICKUP_OTHER_GUILD_DEATH_PENALTY_DROP | Allow players from other guilds to pick up death penalty items                                                                                                   | False                                                                                        | Boolean                                |
@@ -612,6 +636,7 @@ For example:
 | USEAUTH                                   | Use authentication                                                                                                                                               | True                                                                                         | Boolean                                |
 | BAN_LIST_URL                              | Which ban list to use                                                                                                                                            | [https://api.palworldgame.com/api/banlist.txt](https://api.palworldgame.com/api/banlist.txt) | string                                 |
 | SHOW_PLAYER_LIST                          | Enable show player list                                                                                                                                          | True                                                                                         | Boolean                                |
+| SUPPLY_DROP_SPAN                          |  Interval for supply drop (minutes)                                                                                                                                         | 180                                                                                         | Integer                                |
 
 ### Manually
 
